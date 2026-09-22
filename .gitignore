@@ -1,0 +1,20 @@
+# environments & caches
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+.ruff_cache/
+.ipynb_checkpoints/
+
+# DATA: never committed (DHS terms prohibit redistribution)
+data/raw/**
+data/processed/**
+!data/raw/README.md
+
+# model binaries (metrics.json and model_card.md ARE committed)
+models/*.pkl
+models/*.joblib
+
+# secrets & OS noise
+.env
+.DS_Store
