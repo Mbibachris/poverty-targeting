@@ -21,6 +21,7 @@ class SurveySpec:
     year: int
     files: dict[str, str] = field(default_factory=dict)
     anthropometry_subsample_var: str | None = None
+    code_overrides: dict[str, dict[int, str]] = field(default_factory=dict)
 
     @property
     def raw_dir(self) -> Path:
@@ -64,6 +65,12 @@ def load_survey(survey_id: str, config_dir: Path | None = None) -> SurveySpec:
     if missing:
         raise ValueError(f"{path.name} is missing required file entries: {missing}")
 
+    # TOML keys are always text ("72"); survey codes are numbers (72).
+    code_overrides = {
+        column: {int(code): category for code, category in mapping.items()}
+        for column, mapping in raw.get("codes", {}).items()
+    }
+
     anthro = raw.get("anthropometry", {})
     return SurveySpec(
         survey_id=meta["id"],
@@ -74,4 +81,5 @@ def load_survey(survey_id: str, config_dir: Path | None = None) -> SurveySpec:
         year=meta["year"],
         files=files,
         anthropometry_subsample_var=anthro.get("subsample_var"),
+        code_overrides=code_overrides,
     )

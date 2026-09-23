@@ -60,3 +60,8 @@ def test_unknown_file_key_lists_available():
     spec = load_survey("GH2022DHS")
     with pytest.raises(KeyError, match="household"):
         spec.file_path("births")
+
+
+def test_code_overrides_are_read_as_integers():
+    spec = load_survey("GH2022DHS")
+    assert spec.code_overrides["water_source"][72] == "sachet"

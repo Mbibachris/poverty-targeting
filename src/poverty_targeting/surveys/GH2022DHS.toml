@@ -18,3 +18,11 @@ gps = "GHGE8AFL.zip"        # GE: displaced cluster coordinates
 [anthropometry]
 available = true
 subsample_var = "hv042"     # 1 = household selected for height/weight measurement
+
+# Country-specific response codes that the standard DHS mapping does not cover.
+# Keys are the survey's codes; values must come from the vocabularies in schema.py.
+[codes.water_source]
+72 = "sachet"               # hv201: sachet water
+
+[codes.sanitation]
+16 = "flush_biodigester"    # hv205: flush, bio-digester (biofil)
