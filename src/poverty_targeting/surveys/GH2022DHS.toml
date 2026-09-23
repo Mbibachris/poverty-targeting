@@ -1,0 +1,20 @@
+# Survey config: Ghana Demographic and Health Survey 2022.
+# File names are relative to data/raw/dhs/GH2022DHS/ (zips are read directly).
+
+[survey]
+id = "GH2022DHS"
+country = "Ghana"
+iso3 = "GHA"
+program = "DHS"
+phase = 8
+year = 2022
+
+[files]
+household = "GHHR8CDT.zip"  # HR: one row per household
+persons = "GHPR8CDT.zip"    # PR: one row per household member
+kids = "GHKR8CDT.zip"       # KR: births in last 5 years (child-mortality fallback)
+gps = "GHGE8AFL.zip"        # GE: displaced cluster coordinates
+
+[anthropometry]
+available = true
+subsample_var = "hv042"     # 1 = household selected for height/weight measurement
