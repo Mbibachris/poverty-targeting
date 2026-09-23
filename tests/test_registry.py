@@ -65,3 +65,9 @@ def test_unknown_file_key_lists_available():
 def test_code_overrides_are_read_as_integers():
     spec = load_survey("GH2022DHS")
     assert spec.code_overrides["water_source"][72] == "sachet"
+
+
+def test_published_reference_figures_are_read():
+    ref = load_survey("GH2022DHS").references["global_mpi"]
+    assert ref["H"] == 0.248
+    assert ref["url"].startswith("https://")

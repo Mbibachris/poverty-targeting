@@ -22,6 +22,7 @@ class SurveySpec:
     files: dict[str, str] = field(default_factory=dict)
     anthropometry_subsample_var: str | None = None
     code_overrides: dict[str, dict[int, str]] = field(default_factory=dict)
+    references: dict[str, dict] = field(default_factory=dict)
 
     @property
     def raw_dir(self) -> Path:
@@ -82,4 +83,5 @@ def load_survey(survey_id: str, config_dir: Path | None = None) -> SurveySpec:
         files=files,
         anthropometry_subsample_var=anthro.get("subsample_var"),
         code_overrides=code_overrides,
+        references=raw.get("reference", {}),
     )

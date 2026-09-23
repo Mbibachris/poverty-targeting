@@ -26,3 +26,16 @@ subsample_var = "hv042"     # 1 = household selected for height/weight measureme
 
 [codes.sanitation]
 16 = "flush_biodigester"    # hv205: flush, bio-digester (biofil)
+
+# Published figures this survey's estimates are validated against (aggregates only).
+[reference.global_mpi]
+source = "UNDP HDRO & OPHI (2025), MPI 2025 briefing note for Ghana (DHS 2022), Table A"
+url = "https://hdr.undp.org/sites/default/files/Country-Profiles/MPI2025/GHA.pdf"
+H = 0.248
+A = 0.455
+M0 = 0.113
+vulnerable = 0.200
+severe = 0.084
+health = 0.251
+education = 0.289
+living_standards = 0.460

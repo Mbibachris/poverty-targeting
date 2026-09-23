@@ -32,3 +32,7 @@ def processed_survey_dir(survey_id: str) -> Path:
 
 # MPI definitions (dimensions, indicators, cutoffs, weights) also ship inside the package.
 MPI_SPEC_DIR = Path(__file__).resolve().parent / "mpi_specs"
+
+
+# Human-readable outputs that contain only aggregate results (safe to commit).
+REPORTS_DIR = PROJECT_ROOT / "reports"
