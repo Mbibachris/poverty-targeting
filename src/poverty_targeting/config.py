@@ -36,3 +36,7 @@ MPI_SPEC_DIR = Path(__file__).resolve().parent / "mpi_specs"
 
 # Human-readable outputs that contain only aggregate results (safe to commit).
 REPORTS_DIR = PROJECT_ROOT / "reports"
+
+
+# Feature sets (which household facts a targeting model may use) ship inside the package.
+FEATURE_SET_DIR = Path(__file__).resolve().parent / "feature_sets"

@@ -1,0 +1,134 @@
+# Proxy-means-test feature set: what a short targeting questionnaire would ask.
+#
+# Tier A (strict): nothing that enters the MPI label as a deprivation input.
+# Tier B (realistic): Tier A plus items real PMT forms ask that ARE label inputs.
+# The gap between Tier A and Tier B model performance measures circularity.
+#
+# source = "<table>.<column>" for a canonical column, or "derived" with its inputs.
+# question = how the item would read on a targeting form (used by the API and dashboard).
+
+[feature_set]
+id = "pmt"
+description = "Proxy-means-test questionnaire features, two tiers"
+
+[tiers.A]
+description = "Strict: no label inputs"
+features = [
+  "region", "urban", "hh_size", "head_sex", "head_age",
+  "n_under5", "n_children_5_17", "n_elderly_65plus", "dependency_ratio",
+  "sleeping_rooms", "persons_per_room",
+  "has_bank_account", "owns_agri_land", "owns_livestock",
+]
+
+[tiers.B]
+description = "Realistic: Tier A plus common PMT items that are also label inputs"
+extends = "A"
+features = [
+  "head_years_schooling", "electricity", "cooking_fuel", "floor", "water_source",
+  "sanitation", "has_tv", "has_telephone", "has_refrigerator", "has_motorbike",
+]
+
+# --- location and household structure ------------------------------------------------
+[features.region]
+source = "households.region"
+question = "Region of residence"
+
+[features.urban]
+source = "households.urban"
+question = "Is the household in an urban area?"
+
+[features.hh_size]
+source = "households.hh_size"
+question = "How many people live in this household?"
+
+[features.head_sex]
+source = "households.head_sex"
+question = "Sex of the household head"
+
+[features.head_age]
+source = "households.head_age"
+question = "Age of the household head"
+
+[features.n_under5]
+source = "derived"
+inputs = ["persons.age_years"]
+question = "How many household members are under 5?"
+
+[features.n_children_5_17]
+source = "derived"
+inputs = ["persons.age_years"]
+question = "How many household members are aged 5 to 17?"
+
+[features.n_elderly_65plus]
+source = "derived"
+inputs = ["persons.age_years"]
+question = "How many household members are 65 or older?"
+
+[features.dependency_ratio]
+source = "derived"
+inputs = ["persons.age_years"]
+question = "(computed) members under 15 or 65+ per member aged 15-64"
+
+# --- dwelling and wealth (not label inputs) --------------------------------------------
+[features.sleeping_rooms]
+source = "households.sleeping_rooms"
+question = "How many rooms are used for sleeping?"
+
+[features.persons_per_room]
+source = "derived"
+inputs = ["households.hh_size", "households.sleeping_rooms"]
+question = "(computed) household size per sleeping room"
+
+[features.has_bank_account]
+source = "households.has_bank_account"
+question = "Does any member have a bank account?"
+
+[features.owns_agri_land]
+source = "households.owns_agri_land"
+question = "Does the household own land usable for agriculture?"
+
+[features.owns_livestock]
+source = "households.owns_livestock"
+question = "Does the household own livestock or farm animals?"
+
+# --- Tier B additions: common PMT items that are also MPI label inputs -----------------
+[features.head_years_schooling]
+source = "derived"
+inputs = ["persons.years_schooling"]
+question = "Years of schooling completed by the household head"
+
+[features.electricity]
+source = "households.electricity"
+question = "Does the household have electricity?"
+
+[features.cooking_fuel]
+source = "households.cooking_fuel"
+question = "Main fuel used for cooking"
+
+[features.floor]
+source = "households.floor"
+question = "Main floor material"
+
+[features.water_source]
+source = "households.water_source"
+question = "Main source of drinking water"
+
+[features.sanitation]
+source = "households.sanitation"
+question = "Type of toilet facility"
+
+[features.has_tv]
+source = "households.has_tv"
+question = "Does the household own a television?"
+
+[features.has_telephone]
+source = "households.has_telephone"
+question = "Does the household own a mobile or landline telephone?"
+
+[features.has_refrigerator]
+source = "households.has_refrigerator"
+question = "Does the household own a refrigerator?"
+
+[features.has_motorbike]
+source = "households.has_motorbike"
+question = "Does the household own a motorcycle or scooter?"

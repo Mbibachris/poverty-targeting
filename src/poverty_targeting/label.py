@@ -101,7 +101,9 @@ def write_label(label: Label, out_dir: Path | None = None) -> Path:
     out_dir = Path(out_dir or config.processed_survey_dir(survey_id))
     out_dir.mkdir(parents=True, exist_ok=True)
     label.table.to_parquet(out_dir / f"label_{spec_id}.parquet", index=False)
-    (out_dir / f"label_{spec_id}.json").write_text(json.dumps(label.summary, indent=2))
+    (out_dir / f"label_{spec_id}.json").write_text(
+        json.dumps(label.summary, indent=2), newline="\n"
+    )
     return out_dir
 
 

@@ -124,7 +124,7 @@ def main(argv: list[str] | None = None) -> None:
     report = render_report(args.survey, spec, results, reference)
     out = Path(config.REPORTS_DIR) / "validation" / f"{args.survey}_{spec.spec_id}.md"
     out.parent.mkdir(parents=True, exist_ok=True)
-    out.write_text(report)
+    out.write_text(report, newline="\n")
     print(report)
     print(f"-> {out}")
 
