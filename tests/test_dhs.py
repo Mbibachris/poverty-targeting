@@ -3,7 +3,7 @@ import dataclasses
 import pandas as pd
 import pytest
 
-from poverty_targeting.dhs import UnmappedCodeError, households_from_raw
+from poverty_targeting.dhs import UnmappedCodeError, households_from_raw, persons_from_raw
 from poverty_targeting.readers import RawTable
 from poverty_targeting.registry import SurveySpec
 
@@ -121,3 +121,69 @@ def test_no_anthropometry_gives_na():
     spec = dataclasses.replace(SPEC, anthropometry_subsample_var=None)
     hh = households_from_raw(make_raw(), spec)
     assert hh["anthro_selected"].isna().all()
+
+
+# --- persons ------------------------------------------------------------------------
+
+
+def make_raw_persons(**changes):
+    """Four synthetic household members; keyword arguments replace whole columns."""
+    data = {
+        "hhid": ["   1  1", "   1  1", "   1  1", "   1  2"],
+        "hvidx": [1, 2, 3, 1],
+        "hv101": [1, 2, 3, 1],
+        "hv102": [1, 1, 1, 1],
+        "hv103": [1, 1, 0, 1],
+        "hv104": [1, 2, 1, 2],
+        "hv105": [40, 35, 3, 98],
+        "hv108": [12, 6, 0, 98],
+        "hv121": [0, 0, 2, 1],
+        "hc1": [float("nan"), float("nan"), 40.0, float("nan")],
+        "hc70": [float("nan"), float("nan"), -215.0, float("nan")],
+        "hc71": [float("nan"), float("nan"), 9998.0, float("nan")],
+        "ha40": [float("nan"), 2150.0, float("nan"), float("nan")],
+        "hb40": [1890.0, float("nan"), float("nan"), float("nan")],
+        "ha54": [float("nan"), 1.0, float("nan"), float("nan")],
+    }
+    data.update(changes)
+    return RawTable(data=pd.DataFrame(data), value_labels={}, variable_labels={})
+
+
+def test_persons_build_valid_table():
+    persons = persons_from_raw(make_raw_persons(), SPEC)
+    assert persons.shape == (4, 15)
+    assert persons["is_head"].tolist() == [True, False, False, True]
+    assert persons["sex"].tolist() == ["male", "female", "male", "female"]
+
+
+def test_attendance_counts_both_dhs_yes_codes():
+    # hv121: 1 = currently attending, 2 = attended at some time this year -> both "yes".
+    persons = persons_from_raw(make_raw_persons(), SPEC)
+    assert persons["attended_school"].tolist() == [False, False, True, True]
+
+
+def test_anthropometry_is_rescaled_and_flags_become_na():
+    persons = persons_from_raw(make_raw_persons(), SPEC)
+    assert persons.loc[2, "height_for_age_z"] == -2.15
+    assert pd.isna(persons.loc[2, "weight_for_age_z"])  # 9998 = flagged
+    assert persons["bmi"].tolist()[:2] == [18.9, 21.5]  # men's and women's BMI merged
+
+
+def test_unknown_values_become_na():
+    persons = persons_from_raw(make_raw_persons(), SPEC)
+    assert pd.isna(persons.loc[3, "age_years"])  # hv105 = 98
+    assert pd.isna(persons.loc[3, "years_schooling"])  # hv108 = 98
+
+
+def test_unexpected_attendance_code_fails():
+    with pytest.raises(UnmappedCodeError, match="hv121 -> attended_school"):
+        persons_from_raw(make_raw_persons(hv121=[0, 0, 5, 1]), SPEC)
+
+
+def test_persons_without_anthropometry():
+    spec = dataclasses.replace(SPEC, anthropometry_subsample_var=None)
+    raw = make_raw_persons()
+    raw.data = raw.data.drop(columns=["hc1", "hc70", "hc71", "ha40", "hb40", "ha54"])
+    persons = persons_from_raw(raw, spec)
+    assert persons["bmi"].isna().all()
+    assert persons["height_for_age_z"].isna().all()

@@ -1,4 +1,4 @@
-"""DHS adapter: translate a DHS household recode (HR) into the canonical households table.
+"""DHS adapter: translate DHS recode files into the canonical households and persons tables.
 
 Standard DHS response codes are mapped here once, for every DHS survey. Codes a
 country adds on top (e.g. Ghana's sachet water) go in that survey's config file.
@@ -10,7 +10,12 @@ import pandas as pd
 
 from poverty_targeting.readers import RawTable, read_stata_zip
 from poverty_targeting.registry import SurveySpec
-from poverty_targeting.schema import HOUSEHOLD_COLUMNS, validate_households
+from poverty_targeting.schema import (
+    HOUSEHOLD_COLUMNS,
+    PERSON_COLUMNS,
+    validate_households,
+    validate_persons,
+)
 
 # --- standard DHS codes -> canonical vocabularies (see schema.py) -------------------
 STANDARD_CODES: dict[str, dict[int, str]] = {
@@ -37,6 +42,7 @@ STANDARD_CODES: dict[str, dict[int, str]] = {
 # DHS missing-value conventions.
 CATEGORY_MISSING = (99,)  # "missing"
 BINARY_MISSING = (8, 9)  # "don't know", "missing"
+ANTHRO_FLAG_FLOOR = 9990  # 9996-9998: implausible or flagged measurements
 
 HR_COLUMNS = [
     "hhid", "hv001", "hv005", "hv024", "hv025", "hv009", "hv219", "hv220",
@@ -44,6 +50,13 @@ HR_COLUMNS = [
     "hv207", "hv208", "hv243a", "hv221", "hv243e", "hv243c", "hv210", "hv211",
     "hv209", "hv212", "hv247", "hv244", "hv246", "hv216",
 ]  # fmt: skip
+
+PR_COLUMNS = [
+    "hhid", "hvidx", "hv101", "hv102", "hv103", "hv104", "hv105", "hv108", "hv121",
+]  # fmt: skip
+
+# Read only when the survey measured height and weight.
+PR_ANTHRO_COLUMNS = ["hc1", "hc70", "hc71", "ha40", "hb40", "ha54"]
 
 
 class UnmappedCodeError(ValueError):
@@ -71,12 +84,18 @@ class _Mapper:
             self._unknown(column, unknown, target)
         return self.raw.data[column].map(mapping).astype("string")
 
-    def binary(self, column: str, target: str, true_code: int = 1, false_code: int = 0):
-        known = {true_code, false_code}
+    def binary(
+        self,
+        column: str,
+        target: str,
+        true_codes: tuple[int, ...] = (1,),
+        false_codes: tuple[int, ...] = (0,),
+    ) -> pd.Series:
+        known = set(true_codes) | set(false_codes)
         unknown = sorted(self._codes(column, BINARY_MISSING) - known)
         if unknown:
             self._unknown(column, unknown, target)
-        mapping = {true_code: True, false_code: False}
+        mapping = {c: True for c in true_codes} | {c: False for c in false_codes}
         return self.raw.data[column].map(mapping).astype("boolean")
 
     def material(self, column: str, target: str) -> pd.Series:
@@ -88,6 +107,11 @@ class _Mapper:
 
     def number(self, column: str, missing: tuple[int, ...] = (), dtype: str = "Int64"):
         return self.raw.data[column].where(~self.raw.data[column].isin(missing)).astype(dtype)
+
+    def measure(self, column: str, scale: float = 100.0) -> pd.Series:
+        """Anthropometric value stored x100 by DHS; codes >= 9990 are flagged cases."""
+        values = self.raw.data[column]
+        return (values.where(values < ANTHRO_FLAG_FLOOR) / scale).astype("Float64")
 
 
 def households_from_raw(raw: RawTable, spec: SurveySpec) -> pd.DataFrame:
@@ -124,7 +148,7 @@ def households_from_raw(raw: RawTable, spec: SurveySpec) -> pd.DataFrame:
             "weight": (d["hv005"] / 1_000_000).astype("Float64"),
             "region_code": m.number("hv024"),
             "region": d["hv024"].map(region_names).astype("string"),
-            "urban": m.binary("hv025", "urban", true_code=1, false_code=2),
+            "urban": m.binary("hv025", "urban", true_codes=(1,), false_codes=(2,)),
             "anthro_selected": anthro_selected,
             "hh_size": m.number("hv009"),
             "head_sex": m.category("hv219", "head_sex", {1: "male", 2: "female"}),
@@ -171,3 +195,60 @@ def build_households(spec: SurveySpec) -> pd.DataFrame:
         columns.append(spec.anthropometry_subsample_var)
     raw = read_stata_zip(spec.file_path("household"), columns=columns)
     return households_from_raw(raw, spec)
+
+
+def persons_from_raw(raw: RawTable, spec: SurveySpec) -> pd.DataFrame:
+    """Map a raw DHS person table (PR, already read) into the canonical persons table."""
+    d = raw.data
+    m = _Mapper(raw)
+
+    if spec.anthropometry_subsample_var is not None:
+        age_months = m.number("hc1")
+        haz = m.measure("hc70")
+        waz = m.measure("hc71")
+        # A person is measured in either the women's or the men's module, never both.
+        bmi = m.measure("ha40").fillna(m.measure("hb40"))
+        pregnant = m.binary("ha54", "pregnant")
+    else:
+        age_months = pd.Series(pd.NA, index=d.index, dtype="Int64")
+        haz = waz = bmi = pd.Series(pd.NA, index=d.index, dtype="Float64")
+        pregnant = pd.Series(pd.NA, index=d.index, dtype="boolean")
+
+    out = pd.DataFrame(
+        {
+            "survey_id": pd.Series(spec.survey_id, index=d.index, dtype="string"),
+            "hh_id": d["hhid"].astype("string").str.strip(),
+            "line": m.number("hvidx"),
+            "is_head": (d["hv101"] == 1).astype("boolean"),
+            "usual_resident": m.binary("hv102", "usual_resident"),
+            "slept_last_night": m.binary("hv103", "slept_last_night"),
+            "sex": m.category("hv104", "sex", {1: "male", 2: "female"}),
+            "age_years": m.number("hv105", missing=(98, 99)),
+            "years_schooling": m.number("hv108", missing=(97, 98, 99)),
+            # hv121: 1 = currently attending, 2 = attended at some time this year.
+            "attended_school": m.binary("hv121", "attended_school", true_codes=(1, 2)),
+            "age_months": age_months,
+            "height_for_age_z": haz,
+            "weight_for_age_z": waz,
+            "bmi": bmi,
+            "pregnant": pregnant,
+        }
+    )
+
+    if m.problems:
+        raise UnmappedCodeError(
+            f"{spec.survey_id}: cannot map person codes:\n- " + "\n- ".join(m.problems)
+        )
+
+    out = out[[c.name for c in PERSON_COLUMNS]].reset_index(drop=True)
+    validate_persons(out)
+    return out
+
+
+def build_persons(spec: SurveySpec) -> pd.DataFrame:
+    """Read a survey's PR file from disk and return the validated persons table."""
+    columns = list(PR_COLUMNS)
+    if spec.anthropometry_subsample_var is not None:
+        columns += PR_ANTHRO_COLUMNS
+    raw = read_stata_zip(spec.file_path("persons"), columns=columns)
+    return persons_from_raw(raw, spec)
