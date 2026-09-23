@@ -1,0 +1,87 @@
+# Global Multidimensional Poverty Index (OPHI / UNDP), 2018 revision, as applied in 2024.
+# Source: Alkire, Kanagaratnam & Suppa (2024), OPHI MPI Methodological Note 58, Table 1
+# and section 5. Section numbers below refer to that note.
+# Category names must come from the vocabularies in schema.py.
+
+[mpi]
+id = "global_mpi"
+name = "Global MPI (OPHI/UNDP, 2018 revision)"
+source = "Alkire, Kanagaratnam & Suppa (2024), OPHI MPI Methodological Note 58"
+poverty_cutoff = "1/3"          # poor if weighted deprivation score >= k
+members = "usual_residents"     # s.5.4: information from usual (de jure) members only
+missing_data = "drop"           # s.5.7: households missing any indicator are dropped
+
+# --- structure: three equally weighted dimensions, indicators split equally within ---
+[dimensions.health]
+weight = "1/3"
+indicators = ["nutrition", "child_mortality"]
+
+[dimensions.education]
+weight = "1/3"
+indicators = ["years_schooling", "school_attendance"]
+
+[dimensions.living_standards]
+weight = "1/3"
+indicators = ["cooking_fuel", "sanitation", "drinking_water", "electricity", "housing", "assets"]
+
+# --- deprivation cutoffs --------------------------------------------------------------
+[indicators.nutrition]
+# Any person under 70 with nutritional information is undernourished.
+under5_z_cutoff = -2.0          # height-for-age OR weight-for-age z below -2
+adult_bmi_cutoff = 18.5         # BMI below 18.5, adults 20-70
+max_age_years = 70
+# Ages 5-19 use BMI-for-age (WHO 2007) in the official MPI; treatment decided in Step 5.
+
+[indicators.child_mortality]
+# A child under 18 died in the household in the five years before the survey.
+max_child_age_years = 18
+window_months = 60
+
+[indicators.years_schooling]
+# No eligible household member has completed six years of schooling.
+min_years = 6
+eligible_min_age = 10
+
+[indicators.school_attendance]
+# Any school-aged child not attending, up to the age they would complete class 8.
+school_entry_age = 6            # Ghana: primary entry age (country-specific)
+span_years = 8                  # school-aged = entry age .. entry age + 7
+
+[indicators.cooking_fuel]
+# Cooks with solid fuel.
+deprived = [
+  "coal_lignite", "charcoal", "wood", "straw_shrubs", "crop_residue",
+  "animal_dung", "processed_biomass", "garbage", "sawdust",
+]
+
+[indicators.sanitation]
+# Unimproved or no facility, or improved but shared.
+improved = [
+  "flush_sewer", "flush_septic", "flush_pit", "flush_unknown", "flush_biodigester",
+  "vip_latrine", "pit_with_slab", "composting",
+]
+shared_counts_as_deprived = true
+
+[indicators.drinking_water]
+# Unsafe source, or safe water 30+ minutes away (round trip).
+# Packaged (bottled, sachet) and delivered (tanker/cart) water follow the survey report's
+# improved-source definition; this choice is tested for sensitivity in Step 7.
+improved = [
+  "piped_dwelling", "piped_yard", "piped_neighbour", "public_tap", "tubewell_borehole",
+  "protected_well", "protected_spring", "rainwater", "tanker_cart", "bottled", "sachet",
+]
+max_round_trip_minutes = 30
+
+[indicators.electricity]
+# No electricity.
+
+[indicators.housing]
+# Inadequate floor, walls or roof.
+inadequate_floor = ["natural"]
+inadequate_walls = ["natural", "rudimentary"]
+inadequate_roof = ["natural", "rudimentary"]
+
+[indicators.assets]
+# Owns at most one small asset and no car or truck.
+small = ["radio", "tv", "telephone", "computer", "animal_cart", "bicycle", "motorbike", "refrigerator"]
+large = ["car_truck"]

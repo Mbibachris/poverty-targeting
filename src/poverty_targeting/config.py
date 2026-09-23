@@ -28,3 +28,7 @@ def raw_survey_dir(program: str, survey_id: str) -> Path:
 def processed_survey_dir(survey_id: str) -> Path:
     """Folder for one survey's cleaned, canonical tables."""
     return PROCESSED_DIR / survey_id
+
+
+# MPI definitions (dimensions, indicators, cutoffs, weights) also ship inside the package.
+MPI_SPEC_DIR = Path(__file__).resolve().parent / "mpi_specs"
