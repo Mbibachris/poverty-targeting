@@ -30,8 +30,11 @@ indicators = ["cooking_fuel", "sanitation", "drinking_water", "electricity", "ho
 under5_z_cutoff = -2.0          # height-for-age OR weight-for-age z below -2
 adult_bmi_cutoff = 18.5         # BMI below 18.5, adults 20-70
 max_age_years = 70
-# Ages 5-19 use BMI-for-age (WHO 2007) in the official MPI; treatment decided in Step 5.
-
+exclude_pregnant = true         # BMI is not a valid nutrition measure during pregnancy
+# Ages 5-19 use BMI-for-age z-scores (WHO 2007) in the official MPI, which DHS does not
+# supply. "exclude" leaves measured 15-19s out (understates); "adult_cutoff" applies
+# BMI < 18.5 to them (overstates). Together they bound the official figure (Step 7).
+adolescents_15_19 = "exclude"
 [indicators.child_mortality]
 # A child under 18 died in the household in the five years before the survey.
 max_child_age_years = 18
