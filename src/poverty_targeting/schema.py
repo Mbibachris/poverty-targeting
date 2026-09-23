@@ -90,6 +90,30 @@ HOUSEHOLD_COLUMNS: tuple[Column, ...] = (
 
 HOUSEHOLD_COLUMN_NAMES = tuple(c.name for c in HOUSEHOLD_COLUMNS)
 
+PERSON_COLUMNS: tuple[Column, ...] = (
+    # --- identifiers ---
+    Column("survey_id", "str", "Survey key, e.g. GH2022DHS", nullable=False),
+    Column("hh_id", "str", "Household ID; links to the households table", nullable=False),
+    Column("line", "int", "Person's line number within the household", nullable=False),
+    # --- membership and demographics ---
+    Column("is_head", "bool", "True for the household head", nullable=False),
+    Column("usual_resident", "bool", "Usual member of the household (de jure)"),
+    Column("slept_last_night", "bool", "Stayed in the household last night (de facto)"),
+    Column("sex", "category", "Sex", allowed=SEXES),
+    Column("age_years", "int", "Age in completed years"),
+    # --- education ---
+    Column("years_schooling", "int", "Completed years of schooling"),
+    Column("attended_school", "bool", "Attended school during the current school year"),
+    # --- nutrition (measured subsample only; NA elsewhere) ---
+    Column("age_months", "int", "Age in months, children under five"),
+    Column("height_for_age_z", "float", "Height-for-age z-score (WHO 2006), under-fives"),
+    Column("weight_for_age_z", "float", "Weight-for-age z-score (WHO 2006), under-fives"),
+    Column("bmi", "float", "Body mass index, measured adults"),
+    Column("pregnant", "bool", "Currently pregnant (measured women)"),
+)
+
+PERSON_COLUMN_NAMES = tuple(c.name for c in PERSON_COLUMNS)
+
 _KIND_CHECKS = {
     "str": pd.api.types.is_string_dtype,
     "int": pd.api.types.is_integer_dtype,
@@ -103,18 +127,19 @@ class SchemaError(ValueError):
     """Raised when a table breaks the canonical contract."""
 
 
-def validate_households(df: pd.DataFrame) -> None:
-    """Check a households table against the contract; report every problem at once."""
+def _validate(df: pd.DataFrame, columns: tuple[Column, ...], key: list[str], table: str) -> None:
+    """Check a table against its contract; report every problem at once."""
+    names = [c.name for c in columns]
     problems: list[str] = []
 
-    missing = [n for n in HOUSEHOLD_COLUMN_NAMES if n not in df.columns]
-    unexpected = [n for n in df.columns if n not in HOUSEHOLD_COLUMN_NAMES]
+    missing = [n for n in names if n not in df.columns]
+    unexpected = [n for n in df.columns if n not in names]
     if missing:
         problems.append(f"missing columns: {missing}")
     if unexpected:
         problems.append(f"unexpected columns: {unexpected}")
 
-    for col in HOUSEHOLD_COLUMNS:
+    for col in columns:
         if col.name not in df.columns:
             continue
         series = df[col.name]
@@ -127,13 +152,23 @@ def validate_households(df: pd.DataFrame) -> None:
             if bad:
                 problems.append(f"{col.name}: values outside vocabulary {bad}")
 
-    if {"survey_id", "hh_id"} <= set(df.columns):
-        n_dup = int(df.duplicated(["survey_id", "hh_id"]).sum())
+    if set(key) <= set(df.columns):
+        n_dup = int(df.duplicated(key).sum())
         if n_dup:
-            problems.append(f"{n_dup} duplicated (survey_id, hh_id) rows")
+            problems.append(f"{n_dup} duplicated {tuple(key)} rows")
 
     if "weight" in df.columns and (df["weight"] <= 0).any():
         problems.append("weight: must be strictly positive")
 
     if problems:
-        raise SchemaError("Households table breaks the contract:\n- " + "\n- ".join(problems))
+        raise SchemaError(f"{table} table breaks the contract:\n- " + "\n- ".join(problems))
+
+
+def validate_households(df: pd.DataFrame) -> None:
+    """Check a households table: one row per (survey_id, hh_id)."""
+    _validate(df, HOUSEHOLD_COLUMNS, ["survey_id", "hh_id"], "Households")
+
+
+def validate_persons(df: pd.DataFrame) -> None:
+    """Check a persons table: one row per (survey_id, hh_id, line)."""
+    _validate(df, PERSON_COLUMNS, ["survey_id", "hh_id", "line"], "Persons")
