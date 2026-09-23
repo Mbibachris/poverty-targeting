@@ -20,8 +20,10 @@ dependencies = [
 # Needed to build the MPI label and train models; the API will not need these.
 train = [
   "devecon @ git+https://github.com/Mbibachris/devecon.git@v0.0.2",
-  "scikit-learn>=1.5",
+    "scikit-learn>=1.5",
+  "lightgbm>=4.3",
 ]
+
 dev = ["pytest>=8.0", "ruff>=0.6"]
 
 [tool.hatch.build.targets.wheel]

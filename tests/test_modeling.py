@@ -1,8 +1,9 @@
 import numpy as np
 import pandas as pd
+import pytest
 
 from poverty_targeting.dataset import TARGET
-from poverty_targeting.modeling import cross_validate, make_logit, split_columns, to_model_input
+from poverty_targeting.modeling import MODELS, cross_validate, split_columns, to_model_input
 
 
 def synthetic(n=1500, seed=0):
@@ -55,15 +56,18 @@ def test_cross_validation_never_touches_the_test_fold():
     assert not np.isnan(result["predictions"]).any()
 
 
-def test_logit_learns_the_signal():
-    result = cross_validate(synthetic(), FEATURES, "logit")
+@pytest.mark.parametrize("model_name", sorted(MODELS))
+def test_every_model_learns_the_signal(model_name):
+    result = cross_validate(synthetic(), FEATURES, model_name)
     assert result["out_of_fold"]["roc_auc"] > 0.75
 
 
-def test_serving_tolerates_unseen_categories_and_missing_answers():
+@pytest.mark.parametrize("model_name", sorted(MODELS))
+def test_serving_tolerates_unseen_categories_and_missing_answers(model_name):
     data = synthetic()
     categorical, numeric = split_columns(data, FEATURES)
-    model = make_logit(categorical, numeric).fit(to_model_input(data, FEATURES), data[TARGET])
+    model = MODELS[model_name](categorical, numeric)
+    model.fit(to_model_input(data, FEATURES), data[TARGET])
     new = pd.DataFrame(
         {
             "region": pd.array(["unknown_region"], dtype="string"),

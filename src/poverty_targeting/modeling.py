@@ -16,6 +16,7 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
+from lightgbm import LGBMClassifier
 from sklearn.compose import ColumnTransformer
 from sklearn.impute import SimpleImputer
 from sklearn.linear_model import LogisticRegression
@@ -23,7 +24,7 @@ from sklearn.pipeline import Pipeline, make_pipeline
 from sklearn.preprocessing import OneHotEncoder, StandardScaler
 
 from poverty_targeting import config
-from poverty_targeting.dataset import TARGET, TEST_FOLD
+from poverty_targeting.dataset import SEED, TARGET, TEST_FOLD
 from poverty_targeting.features import load_feature_set
 from poverty_targeting.metrics import discrimination, evaluate
 
@@ -70,7 +71,44 @@ def make_logit(categorical: list[str], numeric: list[str]) -> Pipeline:
     return Pipeline([("preprocess", preprocess), ("model", LogisticRegression(max_iter=5000))])
 
 
-MODELS: dict[str, Callable[[list[str], list[str]], Pipeline]] = {"logit": make_logit}
+def make_lightgbm(categorical: list[str], numeric: list[str]) -> Pipeline:
+    """Gradient-boosted trees, deliberately regularised: ~7,000 training households.
+
+    Shallow trees (7 leaves), many small steps, large minimum leaf size and an L2
+    penalty. Missing numbers are handled natively by LightGBM, so no imputation.
+    """
+    preprocess = ColumnTransformer(
+        [
+            ("numeric", "passthrough", numeric),
+            (
+                "categorical",
+                make_pipeline(
+                    SimpleImputer(strategy="constant", fill_value="missing"),
+                    OneHotEncoder(handle_unknown="ignore"),
+                ),
+                categorical,
+            ),
+        ]
+    )
+    model = LGBMClassifier(
+        n_estimators=800,
+        learning_rate=0.02,
+        num_leaves=7,
+        min_child_samples=80,
+        subsample=0.8,
+        subsample_freq=1,
+        colsample_bytree=0.8,
+        reg_lambda=5.0,
+        random_state=SEED,
+        verbose=-1,
+    )
+    return Pipeline([("preprocess", preprocess), ("model", model)])
+
+
+MODELS: dict[str, Callable[[list[str], list[str]], Pipeline]] = {
+    "logit": make_logit,
+    "lightgbm": make_lightgbm,
+}
 
 
 def _normalised(weights: pd.Series) -> np.ndarray:
