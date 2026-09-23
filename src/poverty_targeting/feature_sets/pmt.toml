@@ -15,7 +15,7 @@ description = "Proxy-means-test questionnaire features, two tiers"
 description = "Strict: no label inputs"
 features = [
   "region", "urban", "hh_size", "head_sex", "head_age",
-  "n_under5", "n_children_5_17", "n_elderly_65plus", "dependency_ratio",
+  "n_under5", "n_children_5_17", "n_elderly_65plus", "dependent_share",
   "sleeping_rooms", "persons_per_room",
   "has_bank_account", "owns_agri_land", "owns_livestock",
 ]
@@ -64,10 +64,10 @@ source = "derived"
 inputs = ["persons.age_years"]
 question = "How many household members are 65 or older?"
 
-[features.dependency_ratio]
+[features.dependent_share]
 source = "derived"
 inputs = ["persons.age_years"]
-question = "(computed) members under 15 or 65+ per member aged 15-64"
+question = "(computed) share of members under 18 or aged 65+"
 
 # --- dwelling and wealth (not label inputs) --------------------------------------------
 [features.sleeping_rooms]
