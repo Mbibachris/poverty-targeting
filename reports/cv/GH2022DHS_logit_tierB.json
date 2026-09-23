@@ -1,0 +1,127 @@
+{
+  "model": "logit",
+  "features": [
+    "region",
+    "urban",
+    "hh_size",
+    "head_sex",
+    "head_age",
+    "n_under5",
+    "n_children_5_17",
+    "n_elderly_65plus",
+    "dependent_share",
+    "sleeping_rooms",
+    "persons_per_room",
+    "has_bank_account",
+    "owns_agri_land",
+    "owns_livestock",
+    "head_years_schooling",
+    "electricity",
+    "cooking_fuel",
+    "floor",
+    "water_source",
+    "sanitation",
+    "has_tv",
+    "has_telephone",
+    "has_refrigerator",
+    "has_motorbike"
+  ],
+  "out_of_fold": {
+    "n": 7139,
+    "poverty_rate": 0.23067726353652593,
+    "roc_auc": 0.8960511951808701,
+    "pr_auc": 0.7246371094502617,
+    "calibration": {
+      "brier": 0.10546575458148542,
+      "ece": 0.015031581780680783,
+      "bins": [
+        {
+          "predicted": 0.0018132555466385644,
+          "observed": 0.0,
+          "weight_share": 0.11180226461914004
+        },
+        {
+          "predicted": 0.006898376832166146,
+          "observed": 0.004483446682987314,
+          "weight_share": 0.11556042760055142
+        },
+        {
+          "predicted": 0.019234943239332017,
+          "observed": 0.023788923875358768,
+          "weight_share": 0.09946723425595734
+        },
+        {
+          "predicted": 0.04303948901222792,
+          "observed": 0.054762998975820314,
+          "weight_share": 0.10577581220626502
+        },
+        {
+          "predicted": 0.07983159266104996,
+          "observed": 0.08772467612495113,
+          "weight_share": 0.0987992838507366
+        },
+        {
+          "predicted": 0.14935177509066733,
+          "observed": 0.18683054056516946,
+          "weight_share": 0.10091433812450869
+        },
+        {
+          "predicted": 0.2685488533172026,
+          "observed": 0.26495500809545136,
+          "weight_share": 0.10143656128319814
+        },
+        {
+          "predicted": 0.43886594243741345,
+          "observed": 0.43062517566148767,
+          "weight_share": 0.09128282196668909
+        },
+        {
+          "predicted": 0.6584402745464264,
+          "observed": 0.6233736787082506,
+          "weight_share": 0.08188198007160163
+        },
+        {
+          "predicted": 0.8762219676882614,
+          "observed": 0.82995319523662,
+          "weight_share": 0.093079276021352
+        }
+      ]
+    },
+    "at_threshold": {
+      "threshold": 0.5,
+      "selection_rate": 0.19179773674689193,
+      "exclusion_error": 0.40419835092682743,
+      "inclusion_error": 0.28342275383509624,
+      "coverage_poor": 0.5958016490731726,
+      "coverage_nonpoor": 0.07065934769851151,
+      "targeting_differential": 0.525142301374661
+    },
+    "at_budget": {
+      "budget_share": 0.23067726353652593,
+      "selection_rate": 0.2307253434596862,
+      "exclusion_error": 0.3266694022883644,
+      "inclusion_error": 0.3268097149341883,
+      "coverage_poor": 0.6733305977116356,
+      "coverage_nonpoor": 0.09801255071542102,
+      "targeting_differential": 0.5753180469962146
+    }
+  },
+  "per_fold": {
+    "1": {
+      "roc_auc": 0.8708270402428817,
+      "pr_auc": 0.6844591552858666
+    },
+    "2": {
+      "roc_auc": 0.9110355194203144,
+      "pr_auc": 0.7388943657566188
+    },
+    "3": {
+      "roc_auc": 0.9070940551999216,
+      "pr_auc": 0.7822357511937633
+    },
+    "4": {
+      "roc_auc": 0.8953036402125054,
+      "pr_auc": 0.7178280592790282
+    }
+  }
+}
