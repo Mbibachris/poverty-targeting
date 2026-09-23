@@ -2,9 +2,11 @@ import pandas as pd
 import pytest
 
 from poverty_targeting.schema import (
+    CHILD_DEATH_COLUMNS,
     HOUSEHOLD_COLUMNS,
     PERSON_COLUMNS,
     SchemaError,
+    validate_child_deaths,
     validate_households,
     validate_persons,
 )
@@ -93,3 +95,17 @@ def test_persons_sex_vocabulary_is_checked():
     df.loc[0, "sex"] = "unknown"
     with pytest.raises(SchemaError, match="sex: values outside vocabulary"):
         validate_persons(df)
+
+
+# --- child deaths -------------------------------------------------------------------
+
+
+def test_valid_child_deaths_pass():
+    validate_child_deaths(make_valid(CHILD_DEATH_COLUMNS))
+
+
+def test_child_death_source_vocabulary_is_checked():
+    df = make_valid(CHILD_DEATH_COLUMNS)
+    df.loc[0, "source"] = "rumour"
+    with pytest.raises(SchemaError, match="source: values outside vocabulary"):
+        validate_child_deaths(df)

@@ -1,4 +1,4 @@
-"""Canonical household table: the contract every survey adapter must deliver.
+"""Canonical tables: the contracts every survey adapter must deliver.
 
 Adapters translate each survey's country-specific codes into these columns and
 vocabularies. Everything downstream (MPI label, features, model, API) reads only
@@ -172,3 +172,30 @@ def validate_households(df: pd.DataFrame) -> None:
 def validate_persons(df: pd.DataFrame) -> None:
     """Check a persons table: one row per (survey_id, hh_id, line)."""
     _validate(df, PERSON_COLUMNS, ["survey_id", "hh_id", "line"], "Persons")
+
+
+# --- child deaths ---------------------------------------------------------------------
+
+# Where a survey's death records come from, best source first.
+DEATH_SOURCES = ("births", "kids")  # full birth histories (BR), last-5-years births (KR)
+
+CHILD_DEATH_COLUMNS: tuple[Column, ...] = (
+    Column("survey_id", "str", "Survey key, e.g. GH2022DHS", nullable=False),
+    Column("hh_id", "str", "Household ID; links to the households table", nullable=False),
+    Column("mother_line", "int", "Mother's line number in the household", nullable=False),
+    Column("birth_index", "int", "Birth order index within the mother's history", nullable=False),
+    Column("child_sex", "category", "Sex of the child who died", allowed=SEXES),
+    Column("age_at_death_months", "int", "Child's age at death in months", nullable=False),
+    Column("months_since_death", "int", "Months between the death and the interview"),
+    Column(
+        "source", "category", "File the record came from", nullable=False, allowed=DEATH_SOURCES
+    ),
+)
+
+CHILD_DEATH_COLUMN_NAMES = tuple(c.name for c in CHILD_DEATH_COLUMNS)
+
+
+def validate_child_deaths(df: pd.DataFrame) -> None:
+    """Check a child-deaths table: one row per (survey_id, hh_id, mother_line, birth_index)."""
+    key = ["survey_id", "hh_id", "mother_line", "birth_index"]
+    _validate(df, CHILD_DEATH_COLUMNS, key, "Child deaths")

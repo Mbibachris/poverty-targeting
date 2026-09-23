@@ -11,8 +11,11 @@ import pandas as pd
 from poverty_targeting.readers import RawTable, read_stata_zip
 from poverty_targeting.registry import SurveySpec
 from poverty_targeting.schema import (
+    CHILD_DEATH_COLUMNS,
+    DEATH_SOURCES,
     HOUSEHOLD_COLUMNS,
     PERSON_COLUMNS,
+    validate_child_deaths,
     validate_households,
     validate_persons,
 )
@@ -57,6 +60,9 @@ PR_COLUMNS = [
 
 # Read only when the survey measured height and weight.
 PR_ANTHRO_COLUMNS = ["hc1", "hc70", "hc71", "ha40", "hb40", "ha54"]
+
+# Birth-history variables shared by BR (full histories) and KR (last five years).
+BIRTH_COLUMNS = ["caseid", "v003", "v008", "bidx", "b3", "b4", "b5", "b7"]
 
 
 class UnmappedCodeError(ValueError):
@@ -252,3 +258,54 @@ def build_persons(spec: SurveySpec) -> pd.DataFrame:
         columns += PR_ANTHRO_COLUMNS
     raw = read_stata_zip(spec.file_path("persons"), columns=columns)
     return persons_from_raw(raw, spec)
+
+
+def child_deaths_from_raw(raw: RawTable, spec: SurveySpec, source: str) -> pd.DataFrame:
+    """Map raw DHS birth records (BR or KR) into the canonical child-deaths table.
+
+    Only children who have died are kept. Timing uses century-month codes (CMC):
+    death date = birth date (b3) + age at death (b7); interview date = v008.
+    """
+    d = raw.data
+    m = _Mapper(raw)
+
+    alive = m.binary("b5", "child_alive")
+    sex = m.category("b4", "child_sex", {1: "male", 2: "female"})
+    if m.problems:
+        raise UnmappedCodeError(
+            f"{spec.survey_id}: cannot map birth codes:\n- " + "\n- ".join(m.problems)
+        )
+
+    # b5: 1 = alive, 0 = dead. An unknown survival status is not counted as a death.
+    died = (~alive).fillna(False).to_numpy(dtype=bool)
+    deaths = d[died]
+
+    out = pd.DataFrame(
+        {
+            "survey_id": pd.Series(spec.survey_id, index=deaths.index, dtype="string"),
+            # DHS caseid = household id + 3-character line number of the mother.
+            "hh_id": deaths["caseid"].astype("string").str[:-3].str.strip(),
+            "mother_line": deaths["v003"].astype("Int64"),
+            "birth_index": deaths["bidx"].astype("Int64"),
+            "child_sex": sex[died],
+            "age_at_death_months": deaths["b7"].astype("Int64"),
+            "months_since_death": (deaths["v008"] - (deaths["b3"] + deaths["b7"])).astype("Int64"),
+            "source": pd.Series(source, index=deaths.index, dtype="string"),
+        }
+    )
+
+    out = out[[c.name for c in CHILD_DEATH_COLUMNS]].reset_index(drop=True)
+    validate_child_deaths(out)
+    return out
+
+
+def build_child_deaths(spec: SurveySpec) -> pd.DataFrame:
+    """Read the best available birth file (BR, else KR) and return the child-deaths table."""
+    source = next((key for key in DEATH_SOURCES if key in spec.files), None)
+    if source is None:
+        raise KeyError(
+            f"{spec.survey_id}: no birth file configured (need one of {list(DEATH_SOURCES)}); "
+            "child mortality cannot be built"
+        )
+    raw = read_stata_zip(spec.file_path(source), columns=BIRTH_COLUMNS)
+    return child_deaths_from_raw(raw, spec, source)

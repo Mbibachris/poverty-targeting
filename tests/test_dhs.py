@@ -3,7 +3,13 @@ import dataclasses
 import pandas as pd
 import pytest
 
-from poverty_targeting.dhs import UnmappedCodeError, households_from_raw, persons_from_raw
+from poverty_targeting.dhs import (
+    UnmappedCodeError,
+    build_child_deaths,
+    child_deaths_from_raw,
+    households_from_raw,
+    persons_from_raw,
+)
 from poverty_targeting.readers import RawTable
 from poverty_targeting.registry import SurveySpec
 
@@ -187,3 +193,64 @@ def test_persons_without_anthropometry():
     persons = persons_from_raw(raw, spec)
     assert persons["bmi"].isna().all()
     assert persons["height_for_age_z"].isna().all()
+
+
+# --- child deaths -------------------------------------------------------------------
+
+
+def make_raw_births(**changes):
+    """Four synthetic births: two alive, two dead (one of them a twin)."""
+    data = {
+        "caseid": ["       1   1  2", "       1   1  2", "       1   1  2", "       2   5  3"],
+        "v003": [2, 2, 2, 3],
+        "v008": [1470, 1470, 1470, 1470],  # interview date (century-month code)
+        "bidx": [1, 2, 3, 1],
+        "b3": [1440, 1420, 1420, 1450],  # birth dates (CMC)
+        "b4": [1, 2, 1, 2],
+        "b5": [1, 0, 0, 1],
+        "b7": [float("nan"), 6.0, 0.0, float("nan")],  # age at death, months
+    }
+    data.update(changes)
+    return RawTable(data=pd.DataFrame(data), value_labels={}, variable_labels={})
+
+
+def test_only_deaths_are_kept():
+    deaths = child_deaths_from_raw(make_raw_births(), SPEC, source="kids")
+    assert len(deaths) == 2
+    assert deaths["birth_index"].tolist() == [2, 3]  # twins: same mother, both died
+
+
+def test_household_id_comes_from_caseid():
+    deaths = child_deaths_from_raw(make_raw_births(), SPEC, source="kids")
+    assert deaths["hh_id"].tolist() == ["1   1", "1   1"]  # caseid minus the mother's line
+
+
+def test_months_since_death_uses_cmc_dates():
+    deaths = child_deaths_from_raw(make_raw_births(), SPEC, source="kids")
+    # interview 1470 - (birth 1420 + age at death 6) = 44 ; 1470 - (1420 + 0) = 50
+    assert deaths["months_since_death"].tolist() == [44, 50]
+    assert deaths["source"].tolist() == ["kids", "kids"]
+
+
+def test_unknown_survival_code_fails():
+    with pytest.raises(UnmappedCodeError, match="b5 -> child_alive"):
+        child_deaths_from_raw(make_raw_births(b5=[1, 0, 7, 1]), SPEC, source="kids")
+
+
+def test_missing_birth_file_is_explained():
+    with pytest.raises(KeyError, match="no birth file configured"):
+        build_child_deaths(SPEC)  # SPEC lists no births or kids file
+
+
+def test_births_file_preferred_over_kids(monkeypatch):
+    spec = dataclasses.replace(SPEC, files={**SPEC.files, "kids": "kr.zip", "births": "br.zip"})
+    chosen = {}
+
+    def fake_read(path, columns):
+        chosen["file"] = path.name
+        return make_raw_births()
+
+    monkeypatch.setattr("poverty_targeting.dhs.read_stata_zip", fake_read)
+    deaths = build_child_deaths(spec)
+    assert chosen["file"] == "br.zip"
+    assert set(deaths["source"]) == {"births"}
