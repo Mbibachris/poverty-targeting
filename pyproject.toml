@@ -17,10 +17,17 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
+# Needed to build the MPI label and train models; the API will not need these.
+train = [
+  "devecon @ git+https://github.com/Mbibachris/devecon.git@v0.0.2",
+]
 dev = ["pytest>=8.0", "ruff>=0.6"]
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/poverty_targeting"]
+
+[tool.hatch.metadata]
+allow-direct-references = true  # lets a dependency point at a git tag
 
 [tool.ruff]
 line-length = 100
