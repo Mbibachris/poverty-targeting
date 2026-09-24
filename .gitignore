@@ -14,6 +14,8 @@ data/processed/**
 # model binaries (metrics.json and model_card.md ARE committed)
 models/*.pkl
 models/*.joblib
+# ...except the deployed model: small, contains no survey records, needed to build the image
+!models/GH2022DHS_tierB_lightgbm.joblib
 
 # secrets & OS noise
 .env
