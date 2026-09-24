@@ -1,0 +1,173 @@
+{
+  "meta": {
+    "name": "GH2022DHS_tierB_lightgbm",
+    "survey_id": "GH2022DHS",
+    "spec_id": "global_mpi",
+    "feature_set": "pmt",
+    "tier": "B",
+    "model": "lightgbm",
+    "version": "0.1.0",
+    "trained_at": "2026-09-24T00:31:13+00:00",
+    "features": [
+      "region",
+      "urban",
+      "hh_size",
+      "head_sex",
+      "head_age",
+      "n_under5",
+      "n_children_5_17",
+      "n_elderly_65plus",
+      "dependent_share",
+      "sleeping_rooms",
+      "persons_per_room",
+      "has_bank_account",
+      "owns_agri_land",
+      "owns_livestock",
+      "head_years_schooling",
+      "electricity",
+      "cooking_fuel",
+      "floor",
+      "water_source",
+      "sanitation",
+      "has_tv",
+      "has_telephone",
+      "has_refrigerator",
+      "has_motorbike"
+    ],
+    "questions": {
+      "region": "Region of residence",
+      "urban": "Is the household in an urban area?",
+      "hh_size": "How many people live in this household?",
+      "head_sex": "Sex of the household head",
+      "head_age": "Age of the household head",
+      "n_under5": "How many household members are under 5?",
+      "n_children_5_17": "How many household members are aged 5 to 17?",
+      "n_elderly_65plus": "How many household members are 65 or older?",
+      "dependent_share": "(computed) share of members under 18 or aged 65+",
+      "sleeping_rooms": "How many rooms are used for sleeping?",
+      "persons_per_room": "(computed) household size per sleeping room",
+      "has_bank_account": "Does any member have a bank account?",
+      "owns_agri_land": "Does the household own land usable for agriculture?",
+      "owns_livestock": "Does the household own livestock or farm animals?",
+      "head_years_schooling": "Years of schooling completed by the household head",
+      "electricity": "Does the household have electricity?",
+      "cooking_fuel": "Main fuel used for cooking",
+      "floor": "Main floor material",
+      "water_source": "Main source of drinking water",
+      "sanitation": "Type of toilet facility",
+      "has_tv": "Does the household own a television?",
+      "has_telephone": "Does the household own a mobile or landline telephone?",
+      "has_refrigerator": "Does the household own a refrigerator?",
+      "has_motorbike": "Does the household own a motorcycle or scooter?"
+    },
+    "n_train": 7139,
+    "default_budget": 0.23067726353652593
+  },
+  "test": {
+    "n": 1788,
+    "poverty_rate": 0.21669328186331807,
+    "roc_auc": 0.8916899995132723,
+    "pr_auc": 0.7041972898258376,
+    "calibration": {
+      "brier": 0.10437705701067829,
+      "ece": 0.019941661772198076,
+      "bins": [
+        {
+          "predicted": 0.002281787831199013,
+          "observed": 0.0,
+          "weight_share": 0.08959421288993852
+        },
+        {
+          "predicted": 0.00530133923141764,
+          "observed": 0.010697642219974258,
+          "weight_share": 0.11105835227116105
+        },
+        {
+          "predicted": 0.014139499872991115,
+          "observed": 0.009623824416513905,
+          "weight_share": 0.11343458696418209
+        },
+        {
+          "predicted": 0.031246551154422084,
+          "observed": 0.033285103931777645,
+          "weight_share": 0.12066862551319375
+        },
+        {
+          "predicted": 0.06445262210211733,
+          "observed": 0.12614339142078623,
+          "weight_share": 0.12127595692423197
+        },
+        {
+          "predicted": 0.12329240334131829,
+          "observed": 0.1567751929441472,
+          "weight_share": 0.10086679342544534
+        },
+        {
+          "predicted": 0.23717925388406152,
+          "observed": 0.2634788679276391,
+          "weight_share": 0.09042118008746246
+        },
+        {
+          "predicted": 0.41881333917589825,
+          "observed": 0.4304142699469289,
+          "weight_share": 0.09024295106161366
+        },
+        {
+          "predicted": 0.657915952557435,
+          "observed": 0.6492536203830587,
+          "weight_share": 0.09137295281707378
+        },
+        {
+          "predicted": 0.8527436303696494,
+          "observed": 0.8062457531784546,
+          "weight_share": 0.07106438804569733
+        }
+      ]
+    },
+    "at_threshold": {
+      "threshold": 0.5,
+      "selection_rate": 0.17235905977017452,
+      "exclusion_error": 0.4332529912111711,
+      "inclusion_error": 0.28747424426411544,
+      "coverage_poor": 0.5667470087888289,
+      "coverage_nonpoor": 0.06325592427876828,
+      "targeting_differential": 0.5034910845100606
+    },
+    "at_budget": {
+      "budget_share": 0.23067726353652593,
+      "selection_rate": 0.23182730827210077,
+      "exclusion_error": 0.3090112072781982,
+      "inclusion_error": 0.3541199682570837,
+      "coverage_poor": 0.6909887927218018,
+      "coverage_nonpoor": 0.10480527888453078,
+      "targeting_differential": 0.5861835138372711
+    }
+  },
+  "test_overall_exclusion": 0.30901120727819814,
+  "global_importance": {
+    "head_years_schooling": 0.7502,
+    "cooking_fuel": 0.5606,
+    "n_under5": 0.3316,
+    "water_source": 0.3153,
+    "electricity": 0.3128,
+    "has_tv": 0.3048,
+    "sanitation": 0.2848,
+    "region": 0.2291,
+    "has_refrigerator": 0.2251,
+    "floor": 0.1659,
+    "dependent_share": 0.1645,
+    "head_age": 0.1343,
+    "has_bank_account": 0.0925,
+    "n_children_5_17": 0.0914,
+    "hh_size": 0.0914,
+    "persons_per_room": 0.0865,
+    "has_telephone": 0.0818,
+    "sleeping_rooms": 0.0715,
+    "urban": 0.0551,
+    "owns_livestock": 0.0422,
+    "head_sex": 0.0421,
+    "owns_agri_land": 0.0373,
+    "has_motorbike": 0.0231,
+    "n_elderly_65plus": 0.0208
+  }
+}
