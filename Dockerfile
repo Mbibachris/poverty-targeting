@@ -5,6 +5,10 @@
 # Same Python version the model was trained with.
 FROM python:3.13-slim
 
+# Links the published image to its GitHub repository and describes it.
+LABEL org.opencontainers.image.source="https://github.com/Mbibachris/poverty-targeting" \
+      org.opencontainers.image.description="Poverty targeting API: MPI-poverty probability, budget selection and reasons from a short household questionnaire" \
+      org.opencontainers.image.licenses="MIT"
 # LightGBM needs the OpenMP runtime (libgomp1); slim images leave it out.
 RUN apt-get update \
     && apt-get install -y --no-install-recommends libgomp1 \
