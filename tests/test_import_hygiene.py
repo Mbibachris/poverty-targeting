@@ -15,6 +15,7 @@ SERVING_MODULES = [
     "poverty_targeting.modeling",
     "poverty_targeting.serving",
     "poverty_targeting.api.schemas",
+    "poverty_targeting.api.app",
 ]
 
 
