@@ -19,10 +19,10 @@ jobs:
           python-version: ${{ matrix.python-version }}
           cache: pip
 
-      - name: Install package with dev and train extras
+      - name: Install package with all extras
         run: |
           python -m pip install --upgrade pip
-          pip install -e ".[dev,train]"
+          pip install -e ".[dev,train,api]"
 
       - name: Lint
         run: ruff check .

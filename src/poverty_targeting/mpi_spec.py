@@ -11,7 +11,6 @@ from fractions import Fraction
 from pathlib import Path
 from typing import Any
 
-import devecon
 import numpy as np
 
 from poverty_targeting import config, schema
@@ -53,6 +52,10 @@ class MPISpec:
 
     def weights(self) -> tuple[list[str], np.ndarray]:
         """Indicator names and their nested weights (summing to 1), via devecon."""
+        # Imported here, not at the top: the API loads this module to read feature sets
+        # but never computes an MPI, so it must work without devecon installed.
+        import devecon
+
         return devecon.build_nested_weights(self.dimensions)
 
 

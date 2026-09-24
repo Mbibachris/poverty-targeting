@@ -17,14 +17,16 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-# Needed to build the MPI label and train models; the API will not need these.
+# Everything needed to load a trained model and score households.
+serve = ["scikit-learn>=1.5", "lightgbm>=4.3", "joblib>=1.3"]
+# Building the MPI label and training models (adds devecon).
 train = [
+  "poverty-targeting[serve]",
   "devecon @ git+https://github.com/Mbibachris/devecon.git@v0.0.2",
-    "scikit-learn>=1.5",
-  "lightgbm>=4.3",
 ]
-
-dev = ["pytest>=8.0", "ruff>=0.6"]
+# The prediction web service (no devecon: it never computes an MPI).
+api = ["poverty-targeting[serve]", "fastapi>=0.115", "uvicorn[standard]>=0.30"]
+dev = ["pytest>=8.0", "ruff>=0.6", "httpx>=0.27"]
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/poverty_targeting"]
