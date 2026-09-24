@@ -1,5 +1,6 @@
 import numpy as np
 import pytest
+
 from poverty_targeting.targeting import (
     budget_curve,
     calibration_check,
