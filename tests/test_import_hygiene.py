@@ -14,6 +14,7 @@ SERVING_MODULES = [
     "poverty_targeting.feature_table",
     "poverty_targeting.modeling",
     "poverty_targeting.serving",
+    "poverty_targeting.api.schemas",
 ]
 
 
