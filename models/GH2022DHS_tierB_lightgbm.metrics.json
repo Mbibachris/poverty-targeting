@@ -7,7 +7,7 @@
     "tier": "B",
     "model": "lightgbm",
     "version": "0.1.0",
-    "trained_at": "2026-09-24T00:31:13+00:00",
+    "trained_at": "2026-09-24T01:04:07+00:00",
     "features": [
       "region",
       "urban",
@@ -61,6 +61,10 @@
       "has_motorbike": "Does the household own a motorcycle or scooter?"
     },
     "n_train": 7139,
+    "optional_answers": [
+      "head_age",
+      "head_years_schooling"
+    ],
     "default_budget": 0.23067726353652593
   },
   "test": {

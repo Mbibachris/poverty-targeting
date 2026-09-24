@@ -35,6 +35,10 @@ def roster_answers(hh_ids: pd.Index, persons: pd.DataFrame) -> pd.DataFrame:
     return pd.DataFrame(out, index=hh_ids)
 
 
+# Features computed from other answers: never asked on a form, never sent to the API.
+COMPUTED_FEATURES = ("dependent_share", "persons_per_room")
+
+
 def add_computed_features(answers: pd.DataFrame) -> pd.DataFrame:
     """Add features computed from other answers. Used for training AND by the API."""
     df = answers.copy()

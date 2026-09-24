@@ -27,9 +27,11 @@ import pandas as pd
 from poverty_targeting import __version__, config
 from poverty_targeting.dataset import TARGET, TEST_FOLD
 from poverty_targeting.fairness import groupings, subgroup_table
+from poverty_targeting.feature_table import COMPUTED_FEATURES
 from poverty_targeting.features import load_feature_set
 from poverty_targeting.metrics import evaluate, select_by_budget
 from poverty_targeting.modeling import MODELS, cross_validate, split_columns, to_model_input
+from poverty_targeting.serving import contributions
 from poverty_targeting.targeting import budget_curve
 
 BUDGET_GRID = np.round(np.arange(0.01, 1.0, 0.01), 2)
@@ -42,26 +44,6 @@ def budget_cutoffs(scores, weights) -> dict[float, float]:
         float(b): float(scores[select_by_budget(scores, weights, float(b))].min())
         for b in BUDGET_GRID
     }
-
-
-def feature_of(column: str, features: list[str]) -> str:
-    """Map a transformed column (e.g. 'categorical__water_source_sachet') to its feature."""
-    name = column.split("__", 1)[-1]
-    matches = [f for f in features if name == f or name.startswith(f + "_")]
-    return max(matches, key=len)  # longest match: 'has_tv' must not claim 'has_tv_x'
-
-
-def contributions(pipeline, X: pd.DataFrame, features: list[str]) -> pd.DataFrame:
-    """Per-feature log-odds contributions (TreeSHAP), plus the 'baseline' column."""
-    transformed = pipeline.named_steps["preprocess"].transform(X)
-    if hasattr(transformed, "toarray"):  # one-hot output can be sparse
-        transformed = transformed.toarray()
-    columns = pipeline.named_steps["preprocess"].get_feature_names_out()
-    raw = pipeline.named_steps["model"].booster_.predict(transformed, pred_contrib=True)
-    per_column = pd.DataFrame(raw[:, :-1], columns=columns, index=X.index)
-    grouped = per_column.T.groupby([feature_of(c, features) for c in columns]).sum().T
-    grouped["baseline"] = raw[:, -1]
-    return grouped[[*features, "baseline"]]
 
 
 def fit_final(data: pd.DataFrame, features: list[str], model_name: str):
@@ -179,6 +161,10 @@ def main(argv: list[str] | None = None) -> None:
         "features": features,
         "questions": {f: feature_set.features[f].question for f in features},
         "n_train": int(len(train)),
+        # Answers the model has seen missing in training; every other answer is required.
+        "optional_answers": [
+            f for f in features if f not in COMPUTED_FEATURES and train[f].isna().any()
+        ],
         "default_budget": budget,
         "budget_cutoffs": budget_cutoffs(oof, w_train),  # from cross-validated scores
     }

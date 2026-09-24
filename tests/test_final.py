@@ -2,9 +2,10 @@ import numpy as np
 import pandas as pd
 
 from poverty_targeting.dataset import TARGET
-from poverty_targeting.final import budget_cutoffs, contributions, feature_of, fit_final, model_card
+from poverty_targeting.final import budget_cutoffs, fit_final, model_card
 from poverty_targeting.metrics import evaluate
 from poverty_targeting.modeling import to_model_input
+from poverty_targeting.serving import contributions, feature_of
 from poverty_targeting.targeting import budget_curve
 
 FEATURES = ["region", "hh_size", "has_bank_account"]
