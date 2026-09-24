@@ -1,0 +1,17 @@
+# Only what the image needs goes into the build. Everything else stays out,
+# above all the survey data, which must never end up inside an image.
+.git
+.venv
+.vscode
+.github
+.pytest_cache
+.ruff_cache
+__pycache__
+*.pyc
+data
+notebooks
+reports
+tests
+examples
+models/*
+!models/GH2022DHS_tierB_lightgbm.joblib
