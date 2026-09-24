@@ -32,3 +32,41 @@ jobs:
 
       - name: Tests
         run: pytest -q
+
+  container:
+    needs: checks
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build image
+        run: docker build -t poverty-api:ci .
+
+      - name: Start container
+        run: docker run -d --name api -p 8080:8080 poverty-api:ci
+
+      - name: Wait until healthy
+        run: |
+          for attempt in $(seq 1 30); do
+            if curl -sf http://localhost:8080/health; then exit 0; fi
+            sleep 2
+          done
+          echo "API did not become healthy within 60 seconds"
+          exit 1
+
+      - name: Golden prediction (real model, real container, real HTTP)
+        run: |
+          curl -sf -X POST http://localhost:8080/predict \
+            -H "Content-Type: application/json" \
+            -d @examples/predict_request.json > response.json
+          python3 -c "
+          import json
+          r = json.load(open('response.json'))
+          print(json.dumps(r, indent=2))
+          assert abs(r['probability'] - 0.9798) < 0.001, r['probability']
+          assert r['selected'] is True
+          "
+
+      - name: Container logs (shown if anything failed)
+        if: failure()
+        run: docker logs api

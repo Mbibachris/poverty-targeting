@@ -1,0 +1,27 @@
+{
+  "household": {
+    "region": "Northern",
+    "urban": false,
+    "hh_size": 6,
+    "head_sex": "female",
+    "head_age": 45,
+    "n_under5": 2,
+    "n_children_5_17": 2,
+    "n_elderly_65plus": 0,
+    "sleeping_rooms": 1,
+    "has_bank_account": false,
+    "owns_agri_land": true,
+    "owns_livestock": true,
+    "head_years_schooling": 0,
+    "electricity": false,
+    "cooking_fuel": "wood",
+    "floor": "natural",
+    "water_source": "unprotected_well",
+    "sanitation": "no_facility",
+    "has_tv": false,
+    "has_telephone": true,
+    "has_refrigerator": false,
+    "has_motorbike": false
+  },
+  "budget": 0.25
+}
