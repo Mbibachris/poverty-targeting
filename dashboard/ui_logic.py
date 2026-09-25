@@ -115,3 +115,86 @@ def verdict(result: dict) -> str:
     if result["selected"]:
         return f"Would be selected by a programme covering {budget} of the population."
     return f"Would not be selected by a programme covering {budget} of the population."
+
+
+# --- budget explorer ------------------------------------------------------------------
+
+
+def curve_at(curve: list[dict], budget: float) -> dict:
+    """Targeting outcomes at any budget, interpolated between the measured points."""
+    points = sorted(curve, key=lambda row: row["budget"])
+    budget = min(max(budget, points[0]["budget"]), points[-1]["budget"])
+    for low, high in zip(points, points[1:], strict=False):
+        if low["budget"] <= budget <= high["budget"]:
+            share = (budget - low["budget"]) / (high["budget"] - low["budget"])
+            return {
+                key: low[key] + share * (high[key] - low[key])
+                for key in ("coverage_poor", "inclusion_error", "random_coverage_poor")
+            } | {"budget": budget}
+    return {**points[-1], "budget": budget}
+
+
+# --- many households ------------------------------------------------------------------
+
+YES = {"yes", "y", "true", "1"}
+NO = {"no", "n", "false", "0"}
+
+
+def template_rows(questions: list[dict]) -> list[dict]:
+    """One example row for the spreadsheet template, using each question's first option."""
+    example = {}
+    for q in questions:
+        if q["kind"] == "category":
+            example[q["name"]] = q["options"][0]
+        elif q["kind"] == "yes_no":
+            example[q["name"]] = "no"
+        else:
+            example[q["name"]] = "" if not q["required"] else 1
+    return [example]
+
+
+def _blank(value) -> bool:
+    return (
+        value is None or (isinstance(value, float) and value != value) or str(value).strip() == ""
+    )
+
+
+def parse_households(rows: list[dict], questions: list[dict]) -> tuple[list[dict], list[str]]:
+    """Spreadsheet rows -> API households, plus readable problems (row numbers as in Excel)."""
+    households, problems = [], []
+    for i, row in enumerate(rows, start=2):  # row 1 is the header in a spreadsheet
+        household = {}
+        for q in questions:
+            value = row.get(q["name"])
+            if _blank(value):
+                if q["required"]:
+                    problems.append(f"Row {i}: '{q['name']}' is empty")
+                household[q["name"]] = None
+            elif q["kind"] == "yes_no":
+                text = str(value).strip().lower()
+                if text in YES or text in NO:
+                    household[q["name"]] = text in YES
+                else:
+                    problems.append(f"Row {i}: '{q['name']}' should be yes or no, got '{value}'")
+            elif q["kind"] == "number":
+                try:
+                    household[q["name"]] = int(float(value))
+                except ValueError:
+                    problems.append(f"Row {i}: '{q['name']}' should be a number, got '{value}'")
+            else:
+                household[q["name"]] = str(value).strip()
+        households.append({k: v for k, v in household.items() if v is not None})
+    return households, problems
+
+
+def results_rows(predictions: list[dict]) -> list[dict]:
+    """Flat, spreadsheet-friendly results: one row per household, same order as uploaded."""
+    return [
+        {
+            "likelihood_poor": p["probability"],
+            "selected": "yes" if p["selected"] else "no",
+            "main_reason": p["reasons"][0]["question"] if p["reasons"] else "",
+            "main_reason_direction": p["reasons"][0]["direction"] if p["reasons"] else "",
+        }
+        for p in predictions
+    ]

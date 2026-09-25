@@ -1,3 +1,5 @@
+from pathlib import Path
+
 import pytest
 import streamlit as st
 from fastapi.testclient import TestClient
@@ -6,6 +8,7 @@ from streamlit.testing.v1 import AppTest
 from poverty_targeting.api.app import create_app
 
 APP = "../dashboard/app.py"
+CURVE = str(Path(__file__).parents[1] / "reports" / "targeting" / "GH2022DHS_tierB.json")
 
 
 @pytest.fixture(autouse=True)
@@ -30,6 +33,7 @@ def test_household_assessment_end_to_end(monkeypatch, bundle_path):
     """The dashboard, talking to a real in-memory API that serves the small test model."""
     api = TestClient(create_app(bundle_path))
     monkeypatch.setenv("API_URL", "http://testserver")
+    monkeypatch.setenv("CURVE_SOURCE", CURVE)
     monkeypatch.setattr("api_client.requests.Session", lambda: api)
 
     app = AppTest.from_file(APP, default_timeout=60).run()
@@ -47,3 +51,20 @@ def test_household_assessment_end_to_end(monkeypatch, bundle_path):
     assert any("Would" in box.value for box in [*app.success, *app.info])
     reasons = [m.value for m in app.markdown if "estimated likelihood of being poor" in m.value]
     assert len(reasons) == 3
+
+
+def test_budget_explorer_follows_the_sidebar_slider(monkeypatch, bundle_path):
+    api = TestClient(create_app(bundle_path))
+    monkeypatch.setenv("API_URL", "http://testserver")
+    monkeypatch.setenv("CURVE_SOURCE", CURVE)
+    monkeypatch.setattr("api_client.requests.Session", lambda: api)
+
+    app = AppTest.from_file(APP, default_timeout=60).run()
+    metrics = {m.label: m.value for m in app.metric}
+    assert metrics["Random selection would reach"] == "25%"  # default budget of the test model
+
+    app.slider(key="budget").set_value(50).run()
+    metrics = {m.label: m.value for m in app.metric}
+    assert metrics["Random selection would reach"] == "50%"
+    assert int(metrics["Poor people reached"].rstrip("%")) > 50  # beats random selection
+    assert "project repository" in " ".join(m.value for m in app.markdown)  # About tab

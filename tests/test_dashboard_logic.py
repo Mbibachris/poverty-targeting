@@ -1,10 +1,15 @@
+import pytest
 from ui_logic import (
     answer_text,
+    curve_at,
     grouped,
     likelihood_band,
     number_bounds,
     option_label,
+    parse_households,
     reason_sentence,
+    results_rows,
+    template_rows,
     verdict,
 )
 
@@ -70,3 +75,61 @@ def test_likelihood_bands_and_verdict():
     assert likelihood_band(0.003) == "Very unlikely to be poor"
     assert verdict({"selected": True, "budget": 0.25}).startswith("Would be selected")
     assert "covering 25%" in verdict({"selected": False, "budget": 0.25})
+
+
+# --- budget explorer and many households --------------------------------------------
+
+CURVE = [
+    {"budget": 0.10, "coverage_poor": 0.30, "inclusion_error": 0.20, "random_coverage_poor": 0.10},
+    {"budget": 0.20, "coverage_poor": 0.50, "inclusion_error": 0.30, "random_coverage_poor": 0.20},
+]
+QUESTIONS = [
+    {"name": "region", "kind": "category", "options": ["North", "South"], "required": True},
+    {"name": "electricity", "kind": "yes_no", "options": None, "required": True},
+    {"name": "hh_size", "kind": "number", "options": None, "required": True},
+    {"name": "head_age", "kind": "number", "options": None, "required": False},
+]
+
+
+def test_curve_is_interpolated_between_measured_budgets():
+    point = curve_at(CURVE, 0.15)
+    assert point["coverage_poor"] == pytest.approx(0.40)
+    assert point["inclusion_error"] == pytest.approx(0.25)
+    assert curve_at(CURVE, 0.50)["coverage_poor"] == pytest.approx(0.50)  # clamped to range
+
+
+def test_template_has_one_column_per_question():
+    [row] = template_rows(QUESTIONS)
+    assert list(row) == ["region", "electricity", "hh_size", "head_age"]
+    assert row["region"] == "North" and row["electricity"] == "no" and row["head_age"] == ""
+
+
+def test_spreadsheet_rows_become_households():
+    rows = [{"region": "North", "electricity": "Yes", "hh_size": "4.0", "head_age": ""}]
+    households, problems = parse_households(rows, QUESTIONS)
+    assert problems == []
+    assert households == [{"region": "North", "electricity": True, "hh_size": 4}]
+
+
+def test_spreadsheet_problems_name_the_row_and_column():
+    rows = [{"region": "North", "electricity": "maybe", "hh_size": "", "head_age": "x"}]
+    _, problems = parse_households(rows, QUESTIONS)
+    assert "Row 2: 'electricity' should be yes or no, got 'maybe'" in problems
+    assert "Row 2: 'hh_size' is empty" in problems
+    assert "Row 2: 'head_age' should be a number, got 'x'" in problems
+
+
+def test_results_rows_are_flat():
+    prediction = {
+        "probability": 0.8,
+        "selected": True,
+        "reasons": [{"question": "Main fuel used for cooking", "direction": "raises"}],
+    }
+    assert results_rows([prediction]) == [
+        {
+            "likelihood_poor": 0.8,
+            "selected": "yes",
+            "main_reason": "Main fuel used for cooking",
+            "main_reason_direction": "raises",
+        }
+    ]
