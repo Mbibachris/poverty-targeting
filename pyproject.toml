@@ -26,6 +26,8 @@ train = [
 ]
 # The prediction web service (no devecon: it never computes an MPI).
 api = ["poverty-targeting[serve]", "fastapi>=0.115", "uvicorn[standard]>=0.30"]
+# The Streamlit dashboard (talks to the API over HTTP; no model code needed).
+dashboard = ["streamlit>=1.40", "requests>=2.31", "openpyxl>=3.1"]
 dev = ["pytest>=8.0", "ruff>=0.6", "httpx>=0.27"]
 
 [tool.hatch.build.targets.wheel]
@@ -43,3 +45,4 @@ select = ["E", "F", "I", "UP", "B"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+pythonpath = ["dashboard"]  # dashboard modules are plain scripts, not part of the package
