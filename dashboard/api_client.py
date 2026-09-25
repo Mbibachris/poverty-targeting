@@ -71,6 +71,10 @@ class ApiClient:
     def model_info(self) -> dict:
         return self._request("GET", "/model/info")
 
+    def openapi(self) -> dict:
+        """The API's published schema, including each answer's allowed range."""
+        return self._request("GET", "/openapi.json")
+
     def predict(self, household: dict, budget: float | None = None, top_k: int = 3) -> dict:
         body = {"household": household, "budget": budget, "top_k": top_k}
         return self._request("POST", "/predict", json=body)
