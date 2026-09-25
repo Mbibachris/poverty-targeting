@@ -1,0 +1,5 @@
+# Only what the dashboard needs: no model, no machine-learning libraries.
+streamlit>=1.40,<2
+requests>=2.31
+pandas>=2.2
+openpyxl>=3.1

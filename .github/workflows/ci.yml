@@ -92,3 +92,24 @@ jobs:
           docker push "$IMAGE:$TAG"
           docker push "$IMAGE:latest"
           echo "Published $IMAGE:$TAG"        
+
+  deploy-dashboard:
+    needs: checks
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    env:
+      HF_SPACE: Mbibachris/poverty-targeting-dashboard
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Install the Hugging Face client
+        run: pip install "huggingface_hub>=0.25"
+
+      - name: Upload the dashboard to its Space
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+        run: python .github/scripts/deploy_space.py          
