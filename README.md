@@ -111,6 +111,15 @@ survey with the full MPI questions when possible, and retrain when a new DHS rou
 For ranking households within a budgeted programme, as one input alongside community validation
 and an appeals process. **Not** for automated eligibility decisions.
 
+## Data
+
+This project uses the Ghana Demographic and Health Survey 2022 (Ghana Statistical Service and
+ICF), obtained from the DHS Program (https://dhsprogram.com) under its terms of use. No DHS
+micro-level data are included in this repository, the Docker image, the API or the dashboard:
+only aggregate statistics and a trained model whose parameters are averages over at least
+80 households each. To reproduce the results, register with the DHS Program and follow
+`data/raw/README.md`.
+
 ## Licence
 
 MIT. DHS data is subject to the DHS Program's terms of use and is not included.
